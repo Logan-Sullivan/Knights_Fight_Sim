@@ -64,6 +64,6 @@ int main(int argc, char** argv) {
 	
 	Player p1("Meow", Test);
 	cout << p1.getName() << endl;
-	cout << Test() << endl;
+	cout << p1.doStrat() << endl;
 	return 0;
 }
