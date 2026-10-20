@@ -11,11 +11,21 @@
 //students should only need these two imports as rest are for rendering
 #include<iostream>
 #include<random>
+
 using namespace std;
 /*
 Knights_Fight_Sim
 Author:Logan Sullivan
 Date: Fall 2026
+*/
+/*
+Dict
+
+Round: a collection of turns end of a round is determined by either time limit being reached or death of a fighter
+Match: a match is a collection of rounds in which 3 wins by 1 fighter results in the end of a match meaning a max of 5 rounds / score of 2-3
+
+Classes
+	Player //holds each fighters strategy name as well as statistics such as health and wins
 */
 /*Global Variables These can be used anywhere in the program*/
 
@@ -92,36 +102,121 @@ const int states[13][13] = {
 //class used to prevent misuse of opponents functions
 class Adjudicator {
 private:
+	//keeps the round count
+	int round = 1; 
+	//keeps score for match
+	int score[2] = { 0,0 };
+	/*keeps time of match in seconds if time reaches 0 round ends with winner decided by most hp left
+	if fighters have same hp then round is a tie*/
+	int timeLimit = 45;
+	//counts if fighters tied if fighters tie 3 times in a match win will be decided by "coinflip"
+	int tieCount = 0;
+	//holds the fighters that will fight
+	Player Fighter1;Player Fighter2;
+	//inits basic values that will not change throughout the match beginFight handles rest
 
+	void SetupMatch() {
+		
+	}
+	//starts fight initiates values etc
+	void beginFight() {
+
+	}
+
+	//ends round called when either time limit is reached or a fighter is killed
+	void endRound(){
+		//change score
+		//adjust fighters statistics
+		//check if end of match if so run endMatch()
+		//reset fighters
+		//change round
+		
+	}
+	
+	//gives opponent stats to each fighter after each turn
+	void setOpponentStats() {
+		//string OppName = "na";float Opphealth = -1.0;int OppmatchWins = -1;int OpproundWins = -1;int OpplastMoves[3] = { -1,-1,-1 };
+
+	}
+	public:
+	
 };
 
 
 class Player {
 //All variables within private are only to be used within the Adjudicator class and therefore are inaccessible unless using specified getter methods
 private:
+
 	boolean alive = true;
 	//Name of player will be displayed above Health Bar and within Bracket
 	string Name;
 	//Health of player
-	float health = 1.0;
-	//full match wins
-	int matchWins = 0;
+	float health = 1.0f;
+
 	//rounds won in current round resets after match
 	int roundWins = 0;
-	//hold moves performed in the previous 3 turns with lastMoves[0] being the most recent move this is updated by adjudication
+	/*hold moves performed in the previous 3 turns with lastMoves[0] being the most recent move this is updated by adjudication
+	this is reset on round end not match end
+	*/
 	int lastMoves[3] = { 12,12,12 };
 	//this holds your strategy function given by the constructor
 	int (*StrategyFunc)(void);
 	//this will hold your opponents stats and will be given and updated by the Adjudicator everyRound
 	string OppName = "na";float Opphealth = -1.0;int OppmatchWins = -1;int OpproundWins = -1;int OpplastMoves[3] = { -1,-1,-1 };
+	
 	//allows Adjudicator class to change Player objects
 	friend class Adjudicator;
+	
+	/*****    General Statistics    *****/
+	//records amount of times each move is performed
+	int totalMovesPerformed[13]; 
+	//holds total rounds won
+	int totalRoundsWon = 0;
+	//full match wins
+	int totalMatchWins = 0;
+	//holds damage done throughout whole tournament
+	float totalDmgDone = 0.0;
+	//holds damage taken throughout whole tournament
+	float totalDmgTaken = 0.0;
+	//holds moves which hit you throughout whole tournament
+	int totalMovesHitBy[13];
+	//holds moves youve been hit by this match
+	int matchMovesHitBy[13];
+	
+	/*****    Functions    *****/
+	//resets health alivebool and lastMoves array
+	void resetRoundStats() {
+		health = 1.0f;
+		alive = true;
+		for (int i = 0;i < 3;i++) {
+			lastMoves[i] = 12;
+		}
+	}
+
+	//updates variables which change after each turn
+	void updateTurnStats(int myMove,float dmgDone,float dmgTaken,int oppMove) {
+		//lastMoves
+		//totalMovesPerformed
+		//totalDmgDone
+		//totalDmgTaken
+		//matchMovesHitBy
+		//totalMovesHitBy
+	}
+
+	void updateRoundStats() {
+		if (alive) {
+			roundWins++;
+			totalRoundsWon++;
+		}
+		//roundWins
+		//totalRoundsWon
+	}
 
 	//this executes your strategy function
 	int doStrat(void) {
 		return StrategyFunc();
 	}
-
+	//resets players round stats
 	void resetStatsAfterFight(void) {
 		for (int resetIterator = 0; resetIterator < 3; resetIterator++) {
 			lastMoves[resetIterator] = 12;
@@ -134,6 +229,31 @@ private:
 	void takedamage(float dmg) {
 		health = round((health - dmg) * 10000.0f) / 10000.0f;
 		return;
+	}
+	void getOppName(string nOppName) {
+		OppName = nOppName;
+	}
+	void getOpphealth(float nOpphealth) {
+		Opphealth = nOpphealth;
+	}
+	void getOppmatchWins(int nOppmatchWins) {
+		OppmatchWins = nOppmatchWins;
+	}
+	void getOpproundWins(int nOpproundWins) {
+		OpproundWins = nOpproundWins;
+	}
+	void getOpplastMove(int nOpplastMove, int index) {
+		OpplastMoves[index] = nOpplastMove;
+	}
+	//sets p1's opponentvariables to p2's variables
+	void getAllOppInfo(Player p1, Player p2) {
+		p1.getOpphealth(p2.getHealth());
+		p1.getOppName(p2.getName());
+		p1.getOppmatchWins(p2.getMatchWins());
+		p1.getOpproundWins(p2.getRoundWins());
+		for (int i = 0;i < 3;i++) {
+			p1.getOpplastMove(p2.getLastMoveI(i), i);
+		}
 	}
 public:
 	
@@ -149,20 +269,20 @@ public:
 	string getName(void) {
 		return Name;
 	}
-	// returns last move at index i
+	// returns last move at index i (0-2)
 	int getLastMoveI(int i) {
 		//checks that i is in range
 		if (i < 3 && i >= 0) {
 			return lastMoves[i];
 		}
 	}
-	//returns current matche's amount of rounds won
+	//returns current match's amount of rounds won
 	int getRoundWins(void) {
 		return roundWins;
 	}
 	//returns match wins
 	int getMatchWins(void) {
-		return matchWins;
+		return totalMatchWins;
 	}
 
 	/*     Opponent Getters     */
@@ -172,10 +292,12 @@ public:
 	string Opp_getName(void) {
 		return OppName;
 	}
+	// returns last move at index i (0-2)
 	int Opp_getLastMoveI(int i) {
 		//checks that i is in range
 		if (i < 3 && i >= 0) {
-			return OpplastMoves[i];
+			int lastMove = OpplastMoves[i];
+			return lastMove;
 		}
 	}
 	int Opp_getRoundWins(void) {
@@ -186,9 +308,9 @@ public:
 	}
 
 };
-/*This function will be used to implement your strategy and will return the index of the move to be performed on your next turn
-Uniquly name your Strategy Function please so that implementation will be easier!! (:*/
-int StrategyFunc();
+
+//This function will be used to implement your strategy and will return the index of the move to be performed on your next turn
+int Firstname_LastName_StratName();
 
 //Example of how to implement a strategy so that you have a guidline of how to use these functions / parameters
 int ExampleStrategy() {
@@ -198,10 +320,10 @@ int Test() {
 	cout << "DoFunc" << endl;
 	return 25;
 }
+
 int main(int argc, char** argv) {
 	
 	Player p1("Meow", Test);
 	cout << p1.getName() << endl;
-	cout << p1.doStrat() << endl;
 	return 0;
 }
