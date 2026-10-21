@@ -34,8 +34,10 @@ Classes
 if Player1 does move i and Player 2 does move j 
 [i][j][0] = p1Damage
 [i][j][1] = p2Damage
-i/j
+p1Health -= [i][j][0]
+p2Health -= [i][j][1]
 
+note that if a player gets blocked successfully they take some amount of retaliation damage  
 0 : Lunge
 1 : Thrust
 2 : Overhead
@@ -47,6 +49,13 @@ i/j
 8 : Block Left-High
 9 : Block Right-Low
 10 : Block Left-Low
+example:
+player 1 performs a lunge player 2 performs a Block Left-Low
+lunge is at index 0 Block Left-Low is at index 10
+
+[0][10] = {.3,.0}
+player1 will take .3 damage
+player2 will take 0 damage
 */
 const float pkProb[11][11][2] =
 {						/*Lunge   Thrust  OverHead    SRH      SLH        SRL      SLL      BRH        BLH   BRL     BLL*/
@@ -82,6 +91,13 @@ if [i][j] = 1 move j is available
 10: Block Left - Low
 11: Move
 12: Stop
+example:
+if your last move was a Overhead which is index 2
+to perform your next move you first must check states[2]
+checking states[2] we see
+{ 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 }
+this means that moves at indexes 2,6,9,10,11,12 are valid as they are a 1
+whereas indexes 1,3,4,5,7,8 are 0 and therefore invalid moves
 */
 const int states[13][13] = {
 { 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1 }, //Lunge
@@ -99,6 +115,57 @@ const int states[13][13] = {
 { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0 }  //Stop
 };
 
+/*
+Adjudication concept
+
+adjudicator takes 2 fighters from our bracket
+if !roundBegun
+	startRound(round);
+
+
+round structure
+timer will be handled by animation engine calling our adjudication function every x amount of time until our time limit is reached
+on each adjudication call (decided by animation engine timer):
+	if timer >= time limit 
+		compare each fighters health
+		fighter with more health wins round
+		if both fighters have same hp tieCounter++
+		endRound()
+
+	else:
+
+	fighters decide their next move
+	if either fighters move is illegal (isMoveLegal())
+		set move for this round to Stop
+		damage fighter which performed illegal move by 25% as a penalty
+
+	if fighters move is a damaging move:
+		adjust fighters damage taken and damage done stats
+		adjust fighters movesDone and moves hit by stats
+		adjust fighters health
+	if both fighters health <= 0 tieCounter++
+	
+	if only one fighters health is <= 0
+		set fighters health to 0 (prevents rounding / rendering problems)
+		set fighters "alive" boolean to false
+		increment winners roundsWon
+		endRound()
+
+endRound():
+	check each fighters roundsWon
+	if fighter.roundsWon >= 3
+		fighter.wonMatch = true
+		endMatch()
+	if tieCounter >= 3
+		generate random number "r" which ranges from 0 - 0.999 repeating
+		if r <= 0.50 fighter1.wonMatch = true
+		else fighter2.wonMatch = true
+		endMatch()
+	reset both fighters round stats health last moves etc
+	reset time limit
+	round++
+*/
+
 //class used to prevent misuse of opponents functions
 class Adjudicator {
 private:
@@ -110,11 +177,10 @@ private:
 	if fighters have same hp then round is a tie*/
 	int timeLimit = 45;
 	//counts if fighters tied if fighters tie 3 times in a match win will be decided by "coinflip"
-	int tieCount = 0;
+	int tieCounter = 0;
 	//holds the fighters that will fight
 	Player Fighter1;Player Fighter2;
 	//inits basic values that will not change throughout the match beginFight handles rest
-
 	void SetupMatch() {
 		
 	}
@@ -138,6 +204,10 @@ private:
 		//string OppName = "na";float Opphealth = -1.0;int OppmatchWins = -1;int OpproundWins = -1;int OpplastMoves[3] = { -1,-1,-1 };
 
 	}
+	//checks players move choice against states array to verify if move is allowed based on previous move
+	boolean isMoveLegal() {
+
+	}
 	public:
 	
 };
@@ -146,7 +216,7 @@ private:
 class Player {
 //All variables within private are only to be used within the Adjudicator class and therefore are inaccessible unless using specified getter methods
 private:
-
+	boolean wonMatch = false;
 	boolean alive = true;
 	//Name of player will be displayed above Health Bar and within Bracket
 	string Name;

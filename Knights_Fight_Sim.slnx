@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="Knights_Fight_Sim.vcxproj" />
+  <Project Path="Knights_Fight_Sim.vcxproj" Id="f23ea3b2-86b6-411c-80f2-245699297478" />
 </Solution>
